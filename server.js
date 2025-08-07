@@ -1,21 +1,35 @@
 const express = require('express');
 const path = require('path');
+const axios = require('axios'); // Instale com: npm install axios
 
-// Inicializa o servidor Express
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Importa e inicia o bot (bot.js)
 const startBot = require('./bot.js');
 startBot();
 
-// Importa e configura o servidor web (index.js)
 const webServer = require('./index.js');
 app.use(express.json());
-app.use(express.static('public')); // Serve arquivos estáticos da pasta public
-app.use(webServer); // Integra as rotas do index.js
+app.use(express.static('public'));
+app.use(webServer);
 
-// Inicia o servidor
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Função para pingar a si mesmo
+const keepAlive = async () => {
+  try {
+    await axios.get(`https://bot-transcevada.onrender.com/healthz`);
+    console.log('Ping interno realizado');
+  } catch (error) {
+    console.error('Erro no ping interno:', error.message);
+  }
+};
+
+// Chama keepAlive a cada 4 minutos (menos que 15 para evitar hibernação)
+setInterval(keepAlive, 4 * 60 * 1000);
+
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
