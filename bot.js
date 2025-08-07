@@ -3,17 +3,7 @@ const { Boom } = require('@hapi/boom');
 const fs = require('fs');
 const qrcode = require('qrcode-terminal');
 
-// Função para carregar sempre a versão atualizada dos clientes
-function carregarClientes() {
-  try {
-    const data = fs.readFileSync('./clientDB.json');
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Erro ao ler clientDB.json:', err);
-    return {};
-  }
-}
-
+const clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
 const historicoPath = './historicoDB.json';
 const historico = fs.existsSync(historicoPath) ? JSON.parse(fs.readFileSync(historicoPath)) : {};
 
@@ -30,8 +20,8 @@ async function listarGrupos(sock) {
   const grupos = await sock.groupFetchAllParticipating();
   console.log("\n📃 Lista de Grupos:");
   for (const [jid, info] of Object.entries(grupos)) {
-    console.log(`🟢 Nome: ${info.subject}`);
-    console.log(`🔑 ID: ${jid}`);
+    console.log(🟢 Nome: ${info.subject});
+    console.log(🔑 ID: ${jid});
     console.log('---');
   }
 }
@@ -66,46 +56,38 @@ async function startBot() {
 
     const textoLimpo = texto.replace(/[@,]/g, '').toLowerCase();
 
-    // Recarrega clientes sempre que uma mensagem é processada
-    const clientes = carregarClientes();
-
-    // Comando para histórico de viagens
     if (textoLimpo.includes("historico de viagens do cliente")) {
       const match = textoLimpo.match(/historico de viagens do cliente (.+)/i);
       if (!match) return;
 
-      const nomeBusca = match[1].trim().toLowerCase();
-      const nomeCliente = Object.keys(clientes).find(nome => nome.toLowerCase() === nomeBusca);
-
+      const nomeCliente = Object.keys(clientes).find(nome => nome.toLowerCase() === match[1].trim());
       if (!nomeCliente) {
-        await sock.sendMessage(jidOrigem, { text: `❌ Cliente não encontrado.` });
+        await sock.sendMessage(jidOrigem, { text: ❌ Cliente não encontrado. });
         return;
       }
 
       const registros = historico[nomeCliente] || [];
       if (registros.length === 0) {
-        await sock.sendMessage(jidOrigem, { text: `📭 Sem viagens registradas para ${nomeCliente}.` });
+        await sock.sendMessage(jidOrigem, { text: 📭 Sem viagens registradas para ${nomeCliente}. });
         return;
       }
 
-      let resposta = `🗂️ Histórico de viagens - ${nomeCliente}:\n`;
+      let resposta = 🗂️ Histórico de viagens - ${nomeCliente}:\n;
       for (const r of registros) {
         const contato = await sock.onWhatsApp(r.motorista);
         const nome = contato?.[0]?.notify || r.motorista;
-        resposta += `- ${r.data} - Motorista: ${nome}\n`;
+        resposta += - ${r.data} - Motorista: ${nome}\n;
       }
 
       await sock.sendMessage(jidOrigem, { text: resposta });
       return;
     }
 
-    // Verifica se é permitido responder
     if (!isGroup || (!autorizado && remetente !== donoDoBot)) {
       console.log("❌ Grupo não autorizado.");
       return;
     }
 
-    // Identifica cliente mencionado no texto
     let clienteEncontrado = null;
     for (const nome in clientes) {
       if (textoLimpo.includes(nome.toLowerCase())) {
@@ -126,7 +108,7 @@ async function startBot() {
       const nomeMotorista = contato?.[0]?.notify || jid;
 
       await sock.sendMessage(jid, {
-        text: `Sr Motorista! Segue a localização do cliente:\nCliente: ${clienteEncontrado}\n📍 https://maps.google.com/?q=${local.latitude},${local.longitude}`
+        text: Sr Motorista! Segue a localização do cliente:\nCliente: ${clienteEncontrado}\n📍 https://maps.google.com/?q=${local.latitude},${local.longitude}
       });
 
       const dataHoje = new Date().toLocaleDateString('pt-BR');
@@ -134,7 +116,7 @@ async function startBot() {
       historico[clienteEncontrado].push({ data: dataHoje, motorista: jid });
       salvarHistorico();
 
-      console.log(`✅ Localização enviada para ${jid} (Cliente: ${clienteEncontrado})`);
+      console.log(✅ Localização enviada para ${jid} (Cliente: ${clienteEncontrado}));
     }
   });
 
