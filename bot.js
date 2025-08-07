@@ -3,7 +3,17 @@ const { Boom } = require('@hapi/boom');
 const fs = require('fs');
 const qrcode = require('qrcode-terminal');
 
-const clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
+// Função para carregar sempre a versão atualizada dos clientes
+function carregarClientes() {
+  try {
+    const data = fs.readFileSync('./clientDB.json');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Erro ao ler clientDB.json:', err);
+    return {};
+  }
+}
+
 const historicoPath = './historicoDB.json';
 const historico = fs.existsSync(historicoPath) ? JSON.parse(fs.readFileSync(historicoPath)) : {};
 
@@ -56,11 +66,17 @@ async function startBot() {
 
     const textoLimpo = texto.replace(/[@,]/g, '').toLowerCase();
 
+    // Recarrega clientes sempre que uma mensagem é processada
+    const clientes = carregarClientes();
+
+    // Comando para histórico de viagens
     if (textoLimpo.includes("historico de viagens do cliente")) {
       const match = textoLimpo.match(/historico de viagens do cliente (.+)/i);
       if (!match) return;
 
-      const nomeCliente = Object.keys(clientes).find(nome => nome.toLowerCase() === match[1].trim());
+      const nomeBusca = match[1].trim().toLowerCase();
+      const nomeCliente = Object.keys(clientes).find(nome => nome.toLowerCase() === nomeBusca);
+
       if (!nomeCliente) {
         await sock.sendMessage(jidOrigem, { text: `❌ Cliente não encontrado.` });
         return;
@@ -83,11 +99,13 @@ async function startBot() {
       return;
     }
 
+    // Verifica se é permitido responder
     if (!isGroup || (!autorizado && remetente !== donoDoBot)) {
       console.log("❌ Grupo não autorizado.");
       return;
     }
 
+    // Identifica cliente mencionado no texto
     let clienteEncontrado = null;
     for (const nome in clientes) {
       if (textoLimpo.includes(nome.toLowerCase())) {
