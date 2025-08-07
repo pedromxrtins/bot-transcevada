@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controlador de Clientes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7fa;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: #2c3e50;
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 2rem;
+    }
+
+    .form-group {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      width: calc(50% - 90px);
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    #clientList {
+      margin-top: 30px;
+    }
+
+    #clientList h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+    }
+
+    #clientList p {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    #clientList button {
+      background-color: #e74c3c;
+      padding: 8px 15px;
+    }
+
+    #clientList button:hover {
+      background-color: #c0392b;
+    }
+
+    #searchInput {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    @media (max-width: 768px) {
+      input[type="text"] {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+
+      button {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .form-group {
+        padding: 15px;
+      }
+
+      #searchInput {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>Gerenciar Clientes</h2>
+  <div class="form-group">
+    <input type="text" id="clientName" placeholder="Nome do Cliente">
+    <input type="text" id="clientLocation" placeholder="Localização (ex.: -19.94472, -47.95162)">
+    <button onclick="addClient()">Adicionar</button>
+  </div>
+  <div class="form-group">
+    <input type="text" id="editName" placeholder="Nome do Cliente">
+    <input type="text" id="newLocation" placeholder="Nova Localização">
+    <button onclick="editClient()">Editar</button>
+  </div>
+  <div class="form-group">
+    <input type="text" id="delName" placeholder="Nome do Cliente">
+    <button onclick="deleteClient()">Excluir</button>
+  </div>
+  <div class="form-group">
+    <input type="text" id="searchInput" placeholder="Buscar por nome ou localização">
+  </div>
+  <div id="clientList"></div>
+
+  <script>
+    async function loadClients() {
+      const response = await fetch('/clients');
+      const clients = await response.json();
+      return clients;
+    }
+
+    function updateList(searchTerm = '') {
+      loadClients().then(clients => {
+        const list = document.getElementById('clientList');
+        list.innerHTML = '<h3>Lista de Clientes</h3>';
+        const filteredClients = clients.filter(client => 
+          client.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.localizacao.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        filteredClients.forEach(client => {
+          list.innerHTML += `<p>Nome: ${client.nome}, Localização: ${client.localizacao} 
+            <button onclick="deleteClient('${client.nome}')">Excluir</button></p>`;
+        });
+      });
+    }
+
+    async function addClient() {
+      const name = document.getElementById('clientName').value;
+      const location = document.getElementById('clientLocation').value;
+      if (name && location) {
+        await fetch('/clients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: name, localizacao: location })
+        });
+        updateList();
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientLocation').value = '';
+      }
+    }
+
+    async function editClient() {
+      const name = document.getElementById('editName').value;
+      const newLocation = document.getElementById('newLocation').value;
+      if (name && newLocation) {
+        await fetch(`/clients/${encodeURIComponent(name)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ localizacao: newLocation })
+        });
+        updateList();
+        document.getElementById('editName').value = '';
+        document.getElementById('newLocation').value = '';
+      }
+    }
+
+    async function deleteClient(name) {
+      await fetch(`/clients/${encodeURIComponent(name || document.getElementById('delName').value)}`, {
+        method: 'DELETE'
+      });
+      updateList();
+      document.getElementById('delName').value = '';
+    }
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      updateList(e.target.value);
+    });
+
+    updateList();
+  </script>
+</body>
+</html>
