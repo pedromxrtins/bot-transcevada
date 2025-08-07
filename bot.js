@@ -1,9 +1,7 @@
 const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys');
-const { Boom } = require('@hapi/boom');
 const fs = require('fs');
 const qrcode = require('qrcode-terminal');
 
-const clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
 const historicoPath = './historicoDB.json';
 const historico = fs.existsSync(historicoPath) ? JSON.parse(fs.readFileSync(historicoPath)) : {};
 
@@ -15,6 +13,20 @@ const gruposPermitidos = [
 ];
 
 const donoDoBot = '5535997159139@s.whatsapp.net';
+
+// Função para mostrar lista simplificada de clientes no console
+function mostrarListaClientesSimplificada(clientesObj) {
+  const clientes = Object.entries(clientesObj).map(([nome, data]) => ({ nome, ...data }));
+  console.log('\n📋 Lista de Clientes:');
+  if (clientes.length === 0) {
+    console.log('(vazia)\n');
+    return;
+  }
+  clientes.forEach((cliente, i) => {
+    console.log(`${i + 1}. ${cliente.nome} - Lat: ${cliente.latitude}, Lon: ${cliente.longitude}`);
+  });
+  console.log('');
+}
 
 async function listarGrupos(sock) {
   const grupos = await sock.groupFetchAllParticipating();
@@ -42,6 +54,31 @@ async function startBot() {
 
   sock.ev.on('creds.update', saveCreds);
 
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      qrcode.generate(qr, { small: true });
+    }
+
+    if (connection === 'close') {
+      const shouldReconnect = (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut);
+      console.log('❌ Conexão encerrada. Reconectando?', shouldReconnect);
+      if (shouldReconnect) startBot();
+    } else if (connection === 'open') {
+      console.log('✅ Bot conectado com sucesso!');
+      await listarGrupos(sock);
+
+      // Log da lista de clientes ao conectar
+      try {
+        const clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
+        mostrarListaClientesSimplificada(clientes);
+      } catch (err) {
+        console.error('Erro ao ler clientDB.json no início:', err.message);
+      }
+    }
+  });
+
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0];
     if (!msg.message || msg.key.fromMe) return;
@@ -56,6 +93,14 @@ async function startBot() {
 
     const textoLimpo = texto.replace(/[@,]/g, '').toLowerCase();
 
+    // Carrega clientes atualizados toda vez que chega mensagem
+    let clientes = {};
+    try {
+      clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
+    } catch (err) {
+      console.error("❌ Erro ao ler clientDB.json:", err.message);
+    }
+
     if (textoLimpo.includes("historico de viagens do cliente")) {
       const match = textoLimpo.match(/historico de viagens do cliente (.+)/i);
       if (!match) return;
@@ -63,12 +108,14 @@ async function startBot() {
       const nomeCliente = Object.keys(clientes).find(nome => nome.toLowerCase() === match[1].trim());
       if (!nomeCliente) {
         await sock.sendMessage(jidOrigem, { text: `❌ Cliente não encontrado.` });
+        mostrarListaClientesSimplificada(clientes);
         return;
       }
 
       const registros = historico[nomeCliente] || [];
       if (registros.length === 0) {
         await sock.sendMessage(jidOrigem, { text: `📭 Sem viagens registradas para ${nomeCliente}.` });
+        mostrarListaClientesSimplificada(clientes);
         return;
       }
 
@@ -80,11 +127,13 @@ async function startBot() {
       }
 
       await sock.sendMessage(jidOrigem, { text: resposta });
+      mostrarListaClientesSimplificada(clientes);
       return;
     }
 
     if (!isGroup || (!autorizado && remetente !== donoDoBot)) {
       console.log("❌ Grupo não autorizado.");
+      mostrarListaClientesSimplificada(clientes);
       return;
     }
 
@@ -98,6 +147,7 @@ async function startBot() {
 
     if (!clienteEncontrado) {
       console.log("❌ Nenhum cliente reconhecido na mensagem.");
+      mostrarListaClientesSimplificada(clientes);
       return;
     }
 
@@ -118,25 +168,11 @@ async function startBot() {
 
       console.log(`✅ Localização enviada para ${jid} (Cliente: ${clienteEncontrado})`);
     }
+
+    // Log da lista de clientes após processar comando
+    mostrarListaClientesSimplificada(clientes);
   });
 
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
-
-    if (qr) {
-      qrcode.generate(qr, { small: true });
-    }
-
-    if (connection === 'close') {
-      const shouldReconnect = (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut);
-      console.log('❌ Conexão encerrada. Reconectando?', shouldReconnect);
-      if (shouldReconnect) startBot();
-    } else if (connection === 'open') {
-      console.log('✅ Bot conectado com sucesso!');
-      await listarGrupos(sock);
-    }
-  });
 }
 
-// Exporta a função startBot
 module.exports = startBot;
