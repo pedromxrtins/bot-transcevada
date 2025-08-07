@@ -28,6 +28,7 @@ function mostrarListaClientesSimplificada(clientesObj) {
   console.log('');
 }
 
+
 async function listarGrupos(sock) {
   const grupos = await sock.groupFetchAllParticipating();
   console.log("\n📃 Lista de Grupos:");
@@ -49,7 +50,7 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    printQRInTerminal: true
+    // printQRInTerminal: true
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -67,7 +68,7 @@ async function startBot() {
       if (shouldReconnect) startBot();
     } else if (connection === 'open') {
       console.log('✅ Bot conectado com sucesso!');
-      await listarGrupos(sock);
+     // await listarGrupos(sock);
 
       // Log da lista de clientes ao conectar
       try {
