@@ -2,6 +2,22 @@ const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, Disconne
 const fs = require('fs');
 const qrcode = require('qrcode-terminal');
 
+// Suprime erros específicos do Baileys
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  const msg = args.join(' ');
+  if (
+    msg.includes('No session found') ||
+    msg.includes('No sender key') ||
+    msg.includes('Failure in decoding') ||
+    msg.includes('Decrypting message from') ||
+    msg.includes('Decrypting media from')
+  ) {
+    return; // ignora no terminal
+  }
+  originalConsoleError(...args);
+};
+
 const historicoPath = './historicoDB.json';
 const historico = fs.existsSync(historicoPath) ? JSON.parse(fs.readFileSync(historicoPath)) : {};
 
@@ -14,16 +30,6 @@ const gruposPermitidos = [
 
 const donoDoBot = '5535997159139@s.whatsapp.net';
 
-async function listarGrupos(sock) {
-  const grupos = await sock.groupFetchAllParticipating();
-  console.log("\n📃 Lista de Grupos:");
-  for (const [jid, info] of Object.entries(grupos)) {
-    console.log(`🟢 Nome: ${info.subject}`);
-    console.log(`🔑 ID: ${jid}`);
-    console.log('---');
-  }
-}
-
 function salvarHistorico() {
   fs.writeFileSync(historicoPath, JSON.stringify(historico, null, 2));
 }
@@ -34,8 +40,7 @@ async function startBot() {
 
   const sock = makeWASocket({
     version,
-    auth: state,
-    // printQRInTerminal: true
+    auth: state
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -53,7 +58,6 @@ async function startBot() {
       if (shouldReconnect) startBot();
     } else if (connection === 'open') {
       console.log('✅ Bot conectado com sucesso!');
-      // await listarGrupos(sock);
     }
   });
 
@@ -71,7 +75,6 @@ async function startBot() {
 
     const textoLimpo = texto.replace(/[@,]/g, '').toLowerCase();
 
-    // Carrega clientes atualizados toda vez que chega mensagem
     let clientes = {};
     try {
       clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
@@ -125,14 +128,19 @@ async function startBot() {
     }
 
     const local = clientes[clienteEncontrado];
+    const enviados = new Set();
 
     for (const jid of mencoes) {
+      if (enviados.has(jid)) continue; // Evita enviar 2x para o mesmo
+
       const contato = await sock.onWhatsApp(jid);
       const nomeMotorista = contato?.[0]?.notify || jid;
 
       await sock.sendMessage(jid, {
         text: `Sr Motorista! Segue a localização do cliente:\nCliente: ${clienteEncontrado}\n📍 https://maps.google.com/?q=${local.latitude},${local.longitude}`
       });
+
+      enviados.add(jid);
 
       const dataHoje = new Date().toLocaleDateString('pt-BR');
       historico[clienteEncontrado] = historico[clienteEncontrado] || [];
