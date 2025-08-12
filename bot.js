@@ -14,21 +14,6 @@ const gruposPermitidos = [
 
 const donoDoBot = '5535997159139@s.whatsapp.net';
 
-// Função para mostrar lista simplificada de clientes no console
-function mostrarListaClientesSimplificada(clientesObj) {
-  const clientes = Object.entries(clientesObj).map(([nome, data]) => ({ nome, ...data }));
-  console.log('\n📋 Lista de Clientes:');
-  if (clientes.length === 0) {
-    console.log('(vazia)\n');
-    return;
-  }
-  clientes.forEach((cliente, i) => {
-    console.log(`${i + 1}. ${cliente.nome} - Lat: ${cliente.latitude}, Lon: ${cliente.longitude}`);
-  });
-  console.log('');
-}
-
-
 async function listarGrupos(sock) {
   const grupos = await sock.groupFetchAllParticipating();
   console.log("\n📃 Lista de Grupos:");
@@ -68,15 +53,7 @@ async function startBot() {
       if (shouldReconnect) startBot();
     } else if (connection === 'open') {
       console.log('✅ Bot conectado com sucesso!');
-     // await listarGrupos(sock);
-
-      // Log da lista de clientes ao conectar
-      try {
-        const clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
-        mostrarListaClientesSimplificada(clientes);
-      } catch (err) {
-        console.error('Erro ao ler clientDB.json no início:', err.message);
-      }
+      // await listarGrupos(sock);
     }
   });
 
@@ -109,14 +86,12 @@ async function startBot() {
       const nomeCliente = Object.keys(clientes).find(nome => nome.toLowerCase() === match[1].trim());
       if (!nomeCliente) {
         await sock.sendMessage(jidOrigem, { text: `❌ Cliente não encontrado.` });
-        mostrarListaClientesSimplificada(clientes);
         return;
       }
 
       const registros = historico[nomeCliente] || [];
       if (registros.length === 0) {
         await sock.sendMessage(jidOrigem, { text: `📭 Sem viagens registradas para ${nomeCliente}.` });
-        mostrarListaClientesSimplificada(clientes);
         return;
       }
 
@@ -128,13 +103,11 @@ async function startBot() {
       }
 
       await sock.sendMessage(jidOrigem, { text: resposta });
-      mostrarListaClientesSimplificada(clientes);
       return;
     }
 
     if (!isGroup || (!autorizado && remetente !== donoDoBot)) {
       console.log("❌ Grupo não autorizado.");
-      mostrarListaClientesSimplificada(clientes);
       return;
     }
 
@@ -148,7 +121,6 @@ async function startBot() {
 
     if (!clienteEncontrado) {
       console.log("❌ Nenhum cliente reconhecido na mensagem.");
-      mostrarListaClientesSimplificada(clientes);
       return;
     }
 
@@ -169,11 +141,7 @@ async function startBot() {
 
       console.log(`✅ Localização enviada para ${jid} (Cliente: ${clienteEncontrado})`);
     }
-
-    // Log da lista de clientes após processar comando
-    mostrarListaClientesSimplificada(clientes);
   });
-
 }
 
 module.exports = startBot;
