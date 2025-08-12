@@ -138,6 +138,9 @@
   <div class="form-group">
     <input type="text" id="searchInput" placeholder="Buscar por nome ou localização">
   </div>
+  <div class="form-group">
+    <button onclick="exportJSON()">Exportar JSON</button>
+  </div>
   <div id="clientList"></div>
 
   <script>
@@ -198,6 +201,20 @@
       });
       updateList();
       document.getElementById('delName').value = '';
+    }
+
+    async function exportJSON() {
+      const clients = await loadClients();
+      const jsonString = JSON.stringify(clients, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'clientes.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     document.getElementById('searchInput').addEventListener('input', (e) => {
