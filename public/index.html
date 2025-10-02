@@ -10,7 +10,6 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f4f7fa;
@@ -18,14 +17,12 @@
       max-width: 1200px;
       margin: 0 auto;
     }
-
     h2 {
       color: #2c3e50;
       margin-bottom: 30px;
       text-align: center;
       font-size: 2rem;
     }
-
     .form-group {
       background: white;
       padding: 20px;
@@ -33,7 +30,6 @@
       margin-bottom: 20px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-
     input[type="text"] {
       padding: 10px;
       margin-right: 10px;
@@ -43,12 +39,10 @@
       width: calc(50% - 90px);
       transition: border-color 0.3s;
     }
-
     input[type="text"]:focus {
       outline: none;
       border-color: #3498db;
     }
-
     button {
       padding: 10px 20px;
       background-color: #3498db;
@@ -59,20 +53,16 @@
       font-size: 1rem;
       transition: background-color 0.3s;
     }
-
     button:hover {
       background-color: #2980b9;
     }
-
     #clientList {
       margin-top: 30px;
     }
-
     #clientList h3 {
       color: #2c3e50;
       margin-bottom: 15px;
     }
-
     #clientList p {
       background: white;
       padding: 15px;
@@ -83,36 +73,29 @@
       align-items: center;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
-
     #clientList button {
       background-color: #e74c3c;
       padding: 8px 15px;
     }
-
     #clientList button:hover {
       background-color: #c0392b;
     }
-
     #searchInput {
       width: 100%;
       max-width: 400px;
     }
-
     @media (max-width: 768px) {
       input[type="text"] {
         width: 100%;
         margin-bottom: 10px;
       }
-
       button {
         width: 100%;
         margin-top: 10px;
       }
-
       .form-group {
         padding: 15px;
       }
-
       #searchInput {
         max-width: 100%;
       }
@@ -142,29 +125,26 @@
     <button onclick="exportJSON()">Exportar JSON</button>
   </div>
   <div id="clientList"></div>
-
   <script>
     async function loadClients() {
       const response = await fetch('/clients');
       const clients = await response.json();
       return clients;
     }
-
     function updateList(searchTerm = '') {
       loadClients().then(clients => {
         const list = document.getElementById('clientList');
         list.innerHTML = '<h3>Lista de Clientes</h3>';
-        const filteredClients = clients.filter(client => 
+        const filteredClients = clients.filter(client =>
           client.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
           client.localizacao.toLowerCase().includes(searchTerm.toLowerCase())
         );
         filteredClients.forEach(client => {
-          list.innerHTML += `<p>Nome: ${client.nome}, Localização: ${client.localizacao} 
+          list.innerHTML += `<p>Nome: ${client.nome}, Localização: ${client.localizacao}
             <button onclick="deleteClient('${client.nome}')">Excluir</button></p>`;
         });
       });
     }
-
     async function addClient() {
       const name = document.getElementById('clientName').value;
       const location = document.getElementById('clientLocation').value;
@@ -179,7 +159,6 @@
         document.getElementById('clientLocation').value = '';
       }
     }
-
     async function editClient() {
       const name = document.getElementById('editName').value;
       const newLocation = document.getElementById('newLocation').value;
@@ -194,7 +173,6 @@
         document.getElementById('newLocation').value = '';
       }
     }
-
     async function deleteClient(name) {
       await fetch(`/clients/${encodeURIComponent(name || document.getElementById('delName').value)}`, {
         method: 'DELETE'
@@ -202,10 +180,18 @@
       updateList();
       document.getElementById('delName').value = '';
     }
-
     async function exportJSON() {
       const clients = await loadClients();
-      const jsonString = JSON.stringify(clients, null, 2);
+      const transformed = {};
+      clients.forEach(client => {
+        const [latStr, lonStr] = client.localizacao.split(',').map(s => s.trim());
+        const lat = parseFloat(latStr);
+        const lon = parseFloat(lonStr);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          transformed[client.nome] = { latitude: lat, longitude: lon };
+        }
+      });
+      const jsonString = JSON.stringify(transformed, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -216,11 +202,9 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-
     document.getElementById('searchInput').addEventListener('input', (e) => {
       updateList(e.target.value);
     });
-
     updateList();
   </script>
 </body>
