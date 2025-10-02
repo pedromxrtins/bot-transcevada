@@ -407,7 +407,7 @@
     "latitude": -22.28004,
     "longitude": -47.42592
   },
-  "Humberto Renato  FAZ 02": {
+  "Humberto Renato FAZ 02": {
     "latitude": -19.41631,
     "longitude": -47.50259
   },
@@ -531,7 +531,7 @@
     "latitude": -18.51756,
     "longitude": -47.57737
   },
-  "Paulo Cau  FAZ MARISAN": {
+  "Paulo Cau FAZ MARISAN": {
     "latitude": -20.76034,
     "longitude": -46.20765
   },
@@ -1154,5 +1154,241 @@
   "Jessíca Barreto": {
     "latitude": -20.82225,
     "longitude": -46.84644
+  },
+  "Farah": {
+    "latitude": -19.79251,
+    "longitude": -47.81333
+  },
+  "Antonio Medeiros": {
+    "latitude": -20.83713,
+    "longitude": -46.53765
+  },
+  "Filipe Rezende": {
+    "latitude": -20.40913,
+    "longitude": -46.1269
+  },
+  "Roberto Hugo": {
+    "latitude": -21.97985,
+    "longitude": -47.70144
+  },
+  "Wilton Jose": {
+    "latitude": -20.74396,
+    "longitude": -46.52308
+  },
+  "Jose Fichina": {
+    "latitude": -21.09508,
+    "longitude": -46.97582
+  },
+  "Antonio Jose Garcia": {
+    "latitude": -19.36179,
+    "longitude": -48.03705
+  },
+  "Ana Helena": {
+    "latitude": -20.34272,
+    "longitude": -47.36466
+  },
+  "Antonio Augusto": {
+    "latitude": -19.74528,
+    "longitude": -47.8071
+  },
+  "Antonio Lyrio": {
+    "latitude": -19.74528,
+    "longitude": -47.8071
+  },
+  "Antonio Acedo": {
+    "latitude": -19.74528,
+    "longitude": -47.8071
+  },
+  "Adolfo de Augusto Faria": {
+    "latitude": -20.06431,
+    "longitude": -47.33177
+  },
+  "Onofre Neves": {
+    "latitude": -20.6779,
+    "longitude": -47.18723
+  },
+  "César Figueiredo": {
+    "latitude": -20.6495,
+    "longitude": -47.41707
+  },
+  "Ottoman": {
+    "latitude": -21.48614,
+    "longitude": -47.74671
+  },
+  "Cesar Figueiredo": {
+    "latitude": -20.6495,
+    "longitude": -47.41707
+  },
+  "Adolfo Faria": {
+    "latitude": -20.06431,
+    "longitude": -47.33177
+  },
+  "Monica": {
+    "latitude": -20.85072,
+    "longitude": -47.8573
+  },
+  "Victor Matheus": {
+    "latitude": -19.80396,
+    "longitude": -47.25615
+  },
+  "Germana Maia": {
+    "latitude": -19.80064,
+    "longitude": -48.04101
+  },
+  "Marilsa Helena": {
+    "latitude": -19.6639,
+    "longitude": -47.30283
+  },
+  "Jeferson Barbosa": {
+    "latitude": -21.01682,
+    "longitude": -47.66656
+  },
+  "Terezinha de Fatima": {
+    "latitude": -19.75961,
+    "longitude": -46.47715
+  },
+  "Guilherme Arantes": {
+    "latitude": -21.07912,
+    "longitude": -46.81234
+  },
+  "Salvador Morelli": {
+    "latitude": -19.60272,
+    "longitude": -47.46433
+  },
+  "Sociedade Agropecuaria": {
+    "latitude": -20.14419,
+    "longitude": -45.71256
+  },
+  "Jose Attilio": {
+    "latitude": -20.08352,
+    "longitude": -47.30951
+  },
+  "Altair": {
+    "latitude": -21.5455,
+    "longitude": -47.35298
+  },
+  "Wladimir": {
+    "latitude": -21.36546,
+    "longitude": -46.03075
+  },
+  "Setimo Boscolo": {
+    "latitude": -19.54994,
+    "longitude": -48.45995
+  },
+  "Ronaldo": {
+    "latitude": -21.06341,
+    "longitude": -47.0585
+  },
+  "Henrique Cesar": {
+    "latitude": -20.97326,
+    "longitude": -46.19331
+  },
+  "Maria Auriza": {
+    "latitude": -16.00839,
+    "longitude": -55.04143
+  },
+  "Pedro Carvalho": {
+    "latitude": -21.22651,
+    "longitude": -47.38723
+  },
+  "Sidenei": {
+    "latitude": -16.43484,
+    "longitude": -54.58451
+  },
+  "Sebastiao": {
+    "latitude": -16.96072,
+    "longitude": -54.5778
+  },
+  "Alessandra de Oliveira": {
+    "latitude": -19.6825,
+    "longitude": -47.79518
+  },
+  "Onofre ": {
+    "latitude": -20.67846,
+    "longitude": -47.18706
+  },
+  "Terezinha": {
+    "latitude": -19.75961,
+    "longitude": -46.47715
+  },
+  "Salvador": {
+    "latitude": -19.60272,
+    "longitude": -47.46433
+  },
+  "Reginaldo Rodrigues": {
+    "latitude": -19.8313,
+    "longitude": -47.85888
+  },
+  "Juliano Gonçalves": {
+    "latitude": -20.71217,
+    "longitude": -46.71292
+  },
+  "Henrique Augusto": {
+    "latitude": -20.64639,
+    "longitude": -46.38191
+  },
+  "Cleiton ": {
+    "latitude": -19.75598,
+    "longitude": -46.48701
+  },
+  "Fernando Alves": {
+    "latitude": -19.71336,
+    "longitude": -47.86357
+  },
+  "Silvana": {
+    "latitude": -20.65775,
+    "longitude": -46.6029
+  },
+  " Fabricio Rigotto FAZ 02": {
+    "latitude": -20.79554,
+    "longitude": -47.64507
+  },
+  "Patrick Per Silva": {
+    "latitude": -19.7993,
+    "longitude": -48.08606
+  },
+  "Nilson Camilo": {
+    "latitude": -20.431,
+    "longitude": -46.10077
+  },
+  "Salvador ": {
+    "latitude": -19.60272,
+    "longitude": -47.46433
+  },
+  "Mônica Pilotto": {
+    "latitude": -20.85072,
+    "longitude": -47.8573
+  },
+  "Caio Brandao ": {
+    "latitude": -20.64317,
+    "longitude": -46.61328
+  },
+  "Caio Brandão": {
+    "latitude": -20.64317,
+    "longitude": -46.61328
+  },
+  "Lazaro": {
+    "latitude": -19.97532,
+    "longitude": -47.81117
+  },
+  "Lázaro Alves": {
+    "latitude": -19.97486,
+    "longitude": -47.81112
+  },
+  "Jessica Barreto": {
+    "latitude": -20.82225,
+    "longitude": -46.84644
+  },
+  "Edson Roberto da Silva": {
+    "latitude": -21.29958,
+    "longitude": -46.12906
+  },
+  "Harley Cunha": {
+    "latitude": -19.2779,
+    "longitude": -47.60217
+  },
+  "Harley": {
+    "latitude": -19.2779,
+    "longitude": -47.60217
   }
 }
