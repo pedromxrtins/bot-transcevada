@@ -936,8 +936,8 @@
     "longitude": -45.14089
   },
   "Victor Matheus": {
-    "latitude": -19.98299,
-    "longitude": -47.25957
+    "latitude": -19.80396,
+    "longitude": -47.25615
   },
   "Leonardo Santos Daher": {
     "latitude": -19.91936,
@@ -1227,10 +1227,6 @@
     "latitude": -20.85072,
     "longitude": -47.8573
   },
-  "Victor Matheus": {
-    "latitude": -19.80396,
-    "longitude": -47.25615
-  },
   "Germana Maia": {
     "latitude": -19.80064,
     "longitude": -48.04101
@@ -1335,10 +1331,6 @@
     "latitude": -19.71336,
     "longitude": -47.86357
   },
-  "Silvana": {
-    "latitude": -20.65775,
-    "longitude": -46.6029
-  },
   " Fabricio Rigotto FAZ 02": {
     "latitude": -20.79554,
     "longitude": -47.64507
@@ -1390,5 +1382,17 @@
   "Harley": {
     "latitude": -19.2779,
     "longitude": -47.60217
+  },
+  "Edson Roberto": {
+    "latitude": -21.29958,
+    "longitude": -46.12906
+  },
+  "Janilson Sallun": {
+    "latitude": -19.92021,
+    "longitude": -48.14068
+  },
+  "Navirai": {
+    "latitude": -19.61466,
+    "longitude": -47.98813
   }
 }

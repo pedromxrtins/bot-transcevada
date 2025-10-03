@@ -8,6 +8,8 @@
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.18",
     "express": "^5.1.0",
+    "libsignal": "^2.0.1",
+    "pino": "^10.0.0",
     "qrcode-terminal": "^0.12.0"
   }
 }

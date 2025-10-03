@@ -379,6 +379,10 @@
     {
       "data": "01/08/2025",
       "motorista": "553499550106@s.whatsapp.net"
+    },
+    {
+      "data": "03/10/2025",
+      "motorista": "163625469792504@lid"
     }
   ],
   "Sandra Maria": [
@@ -1157,6 +1161,18 @@
     {
       "data": "02/10/2025",
       "motorista": "163625469792504@lid"
+    }
+  ],
+  "Navirai": [
+    {
+      "data": "03/10/2025",
+      "motorista": "68367507525725@lid"
+    }
+  ],
+  "Duarte Queiroz": [
+    {
+      "data": "03/10/2025",
+      "motorista": "266116458872971@lid"
     }
   ]
 }
