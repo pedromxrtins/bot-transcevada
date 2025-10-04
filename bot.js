@@ -2,7 +2,6 @@ const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, Disconne
 const pino = require('pino');
 const fs = require('fs');
 const qrcode = require('qrcode-terminal');
-
 // Supressão de erros: Ignora Bad MAC em receives, mas loga pra debug
 const originalConsoleError = console.error;
 console.error = (...args) => {
@@ -24,7 +23,6 @@ console.error = (...args) => {
   }
   originalConsoleError(...args);
 };
-
 const historicoPath = './historicoDB.json';
 const historico = fs.existsSync(historicoPath) ? JSON.parse(fs.readFileSync(historicoPath)) : {};
 const gruposPermitidos = [
@@ -34,11 +32,20 @@ const gruposPermitidos = [
   '556696361920-1456497459@g.us'
 ];
 const donoDoBot = '5535997159139@s.whatsapp.net';
-
+// Adicionado: Cache simples para evitar duplicação (sem crypto) - chave: jidOrigem-cliente, valor: timestamp
+const recentSends = new Map();
 function salvarHistorico() {
   fs.writeFileSync(historicoPath, JSON.stringify(historico, null, 2));
 }
-
+// Cleanup do cache a cada 2min (remove entradas antigas)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of recentSends.entries()) {
+    if (now - timestamp > 120000) { // 2min
+      recentSends.delete(key);
+    }
+  }
+}, 120000);
 // Adicionado: Backup de auth a cada 5min pra persistir sessões longas
 function backupAuth() {
   setInterval(() => {
@@ -49,16 +56,41 @@ function backupAuth() {
   }, 300000); // 5min
 }
 
+// Função para aguardar ack de entrega (ack 3)
+function waitForDeliveryAck(sock, key) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      sock.ev.off('messages.update', handler); // Remove listener
+      reject(new Error('Timeout aguardando entrega (30s)'));
+    }, 30000);
+
+    const handler = (updates) => {
+      for (const { key: updateKey, update } of updates) {
+        if (updateKey.id === key.id && update.status === 3) { // Ack 3 = entregue
+          clearTimeout(timeout);
+          sock.ev.off('messages.update', handler);
+          resolve('Entregue!');
+        } else if (updateKey.id === key.id && update.status >= 4) { // Read/played, mas sem 3? Raro, mas loga
+          clearTimeout(timeout);
+          sock.ev.off('messages.update', handler);
+          resolve('Lido!');
+        }
+      }
+    };
+
+    sock.ev.on('messages.update', handler);
+  });
+}
+
 async function startBot() {
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState('auth');
-  
   const sock = makeWASocket({
     version,
     auth: state,
     logger: pino({ level: 'silent' }), // Pino pleno pra .child()
     // Estabilidade: Keep-alive pra semanas sem reset
-    keepAliveIntervalMs: 30000, // Ping 30s (fix reconexões)
+    keepAliveIntervalMs: 20000, // Reduzido para 20s pra melhor detecção
     connectTimeoutMs: 60000, // Timeout longo
     // User-agent fixo: Simula Chrome pra evitar Bad MAC
     browser: ['Chrome', '4.0.0'], // Versão estável
@@ -70,9 +102,7 @@ async function startBot() {
     shouldIgnoreJid: jid => jid === 'status@broadcast',
     markOnlineOnConnect: true, // Mantém "online" pra sync melhor
   });
-
   sock.ev.on('creds.update', saveCreds);
-
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
     if (qr) {
@@ -84,7 +114,10 @@ async function startBot() {
       const shouldReconnect = (statusCode !== DisconnectReason.loggedOut);
       console.log(`❌ Conexão close (code ${statusCode}). Reconectando? ${shouldReconnect}`);
       if (shouldReconnect) {
-        await delay(5000); // Delay suave
+        // Delay adaptativo: 30s para 440 (connectionReplaced), 5s para outros
+        const reconnectDelay = statusCode === 440 ? 30000 : 5000;
+        console.log(`⏳ Aguardando ${reconnectDelay / 1000}s antes de reconectar...`);
+        await delay(reconnectDelay);
         startBot(); // Reconecta sem reset total
       } else {
         console.log('🔄 Logout detectado. Gere novo QR.');
@@ -92,10 +125,20 @@ async function startBot() {
     } else if (connection === 'open') {
       console.log('✅ Bot conectado com sucesso! (Estável pra semanas)');
       backupAuth(); // Inicia backups
+      // Adicionado: Auto-refresh de sessões a cada 15min (reduzido de 1h) para evitar decrypt fails
+      setInterval(async () => {
+        try {
+          await sock.sendMessage(donoDoBot, { text: '🔄 Refresh de sessões iniciado.' });
+          // Gera novas prekeys para refresh proativo
+          const keys = await sock.generatePreKeys(1, 1); // 1 prekey, 1 signed
+          console.log('🔑 Prekeys refreshed:', keys.length);
+        } catch (e) {
+          console.error('❌ Refresh falhou:', e.message);
+        }
+      }, 900000); // 15min
       // Removido: Ping inicial pro dono
     }
   });
-
   // Monitor receipts: Loga sync pro primary (pra debug mensagens "sumidas")
   sock.ev.on('message-receipt.update', (receipts) => {
     for (const receipt of receipts) {
@@ -107,13 +150,19 @@ async function startBot() {
       }
     }
   });
-
+  // Adicionado: Log de Acks para debug
+  sock.ev.on('messages.update', (updates) => {
+    for (const { key, update } of updates) {
+      if (update.status) {
+        console.log(`📋 Ack update para ${key.id}: ${update.status}`);
+      }
+    }
+  });
   // Adicionado: Auto-refresh em crypto errors graves (sem reconectar total)
   let errorCount = 0;
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0];
     if (!msg.message || msg.key.fromMe) return;
-
     const jidOrigem = msg.key.remoteJid;
     const isGroup = jidOrigem.endsWith('@g.us');
     const autorizado = gruposPermitidos.includes(jidOrigem);
@@ -121,14 +170,12 @@ async function startBot() {
     const texto = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
     const mencoes = msg.message.extendedTextMessage?.contextInfo?.mentionedJid || [];
     const textoLimpo = texto.replace(/[@,]/g, '').toLowerCase();
-
     let clientes = {};
     try {
       clientes = JSON.parse(fs.readFileSync('./clientDB.json'));
     } catch (err) {
       console.error("❌ Erro ao ler clientDB.json:", err.message);
     }
-
     // Comando histórico (igual)
     if (textoLimpo.includes("historico de viagens do cliente")) {
       const match = textoLimpo.match(/historico de viagens do cliente (.+)/i);
@@ -152,12 +199,10 @@ async function startBot() {
       await sock.sendMessage(jidOrigem, { text: resposta });
       return;
     }
-
     if (!isGroup || (!autorizado && remetente !== donoDoBot)) {
       console.log("❌ Grupo não autorizado.");
       return;
     }
-
     let clienteEncontrado = null;
     for (const nome in clientes) {
       if (textoLimpo.includes(nome.toLowerCase())) {
@@ -169,11 +214,16 @@ async function startBot() {
       console.log("❌ Nenhum cliente reconhecido na mensagem.");
       return;
     }
-
+    // Adicionado: Verifica duplicação simples (sem crypto) - chave: jidOrigem-cliente
+    const cacheKey = `${jidOrigem}-${clienteEncontrado}`;
+    const lastSent = recentSends.get(cacheKey);
+    if (lastSent && Date.now() - lastSent < 60000) { // 1min
+      console.log('⏭️ Envio duplicado ignorado para cliente:', clienteEncontrado);
+      return;
+    }
     const local = clientes[clienteEncontrado];
     const enviados = new Set();
-
-    for (const jid of mencoes) {
+    for (const jid of [...new Set(mencoes)]) { // Dedup mencoes com Set
       if (enviados.has(jid)) continue;
       try {
         const contato = await sock.onWhatsApp(jid);
@@ -185,12 +235,43 @@ async function startBot() {
           sock.sendMessage(jid, mensagem),
           delay(15000).then(() => { throw new Error('Timeout envio'); })
         ]);
+        
+        // Agora, aguarda ack 3 em vez de logar direto
+        console.log(`📤 Enviado pro servidor (ID: ${sent.key.id}) - Aguardando entrega...`);
+        
+        try {
+          await waitForDeliveryAck(sock, sent.key);
+          console.log(`✅ Entregue com sucesso para ${jid} (Cliente: ${clienteEncontrado})`);
+          // Aqui salva histórico e cache só após confirmação
+          const dataHoje = new Date().toLocaleDateString('pt-BR');
+          historico[clienteEncontrado] = historico[clienteEncontrado] || [];
+          historico[clienteEncontrado].push({ data: dataHoje, motorista: jid });
+          salvarHistorico();
+          recentSends.set(cacheKey, Date.now());
+        } catch (deliveryErr) {
+          console.error(`⚠️ Falha na entrega para ${jid}: ${deliveryErr.message} - Tentando retry...`);
+          // Retry se não entregue (similar ao seu crypto retry)
+          await delay(5000);
+          try {
+            const retrySent = await sock.sendMessage(jid, mensagem);
+            await waitForDeliveryAck(sock, retrySent.key);
+            console.log(`✅ Retry entregue para ${jid}`);
+            // Salva histórico após retry
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+            historico[clienteEncontrado] = historico[clienteEncontrado] || [];
+            historico[clienteEncontrado].push({ data: dataHoje, motorista: jid });
+            salvarHistorico();
+            recentSends.set(cacheKey, Date.now());
+          } catch (retryErr) {
+            console.error(`❌ Retry falhou para ${jid}: ${retryErr.message}`);
+            // Opcional: Notifique o dono
+            await sock.sendMessage(donoDoBot, { text: `⚠️ Falha dupla de entrega para ${jid} (Cliente: ${clienteEncontrado})` });
+          }
+        }
+        
         enviados.add(jid);
-        const dataHoje = new Date().toLocaleDateString('pt-BR');
-        historico[clienteEncontrado] = historico[clienteEncontrado] || [];
-        historico[clienteEncontrado].push({ data: dataHoje, motorista: jid });
-        salvarHistorico();
-        console.log(`✅ Localização enviada para ${jid} (Cliente: ${clienteEncontrado}) - ID: ${sent?.key?.id}`);
+        // Delay entre envios para evitar rate limit
+        await delay(2000);
       } catch (err) {
         console.error(`❌ Falha envio pra ${jid}: ${err.message}`);
         errorCount++;
@@ -202,6 +283,8 @@ async function startBot() {
             await sock.sendMessage(jid, mensagem);
             console.log(`✅ Retry OK pra ${jid}`);
             errorCount = 0; // Reset se sucesso
+            // Registra no cache após retry também
+            recentSends.set(cacheKey, Date.now());
           } catch (retryErr) {
             console.error(`❌ Retry falhou: ${retryErr.message}`);
           }
@@ -215,5 +298,4 @@ async function startBot() {
     }
   });
 }
-
 module.exports = startBot;
